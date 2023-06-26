@@ -1,6 +1,7 @@
 // const { default: inquirer } = require('inquirer')
-const { inquirerMenu, pause, readInput } = require('./helpers/inquirer')
-const { saveDB } = require('./helpers/saveFile')
+const { default: ConfirmPrompt } = require('inquirer/lib/prompts/confirm')
+const { inquirerMenu, pause, readInput, listTasksToDelete, confirm, showListChecklist } = require('./helpers/inquirer')
+const { saveDB, readDB } = require('./helpers/saveFile')
 const Tasks = require('./models/tasks')
 
 require('colors')
@@ -13,6 +14,13 @@ console.clear()
 const main = async () => { 
     let option = ''   
     const tasks = new Tasks()
+
+    const tasksDB = readDB()
+
+    if(tasksDB){
+        tasks.loadTasksFromArray(tasksDB)
+    }
+
     do{
         option = await inquirerMenu()   
 
@@ -22,7 +30,33 @@ const main = async () => {
                 tasks.createTask(description)                
                 break
             case '2':
-                console.log(tasks._list)
+                tasks.listAllTasks()
+                break
+            case '3':
+                tasks.listCompletedTasks(true)
+                break
+            case '4':
+                tasks.listCompletedTasks(false)
+                break   
+            case '5':
+                const ids = await showListChecklist(tasks.listArr)
+                
+                tasks.toggleCompleted(ids)
+                
+                break
+            case '6':
+                const id = await listTasksToDelete(tasks.listArr)                
+                // console.log({id})   
+                
+                if(id !== '0'){
+
+                    const ok = await confirm('Are you sure?')
+                    if(ok){
+                        tasks.deleteTask(id)
+                        console.log('Task deleted')
+                    }
+                }
+
                 break
         }
 
